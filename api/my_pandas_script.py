@@ -1,15 +1,54 @@
-import pandas as pd
 
-cardata ={'mercedas':[1,5,3,5,3],'bmw':[5,8,2,6,5],'ford':[7,8,9,1,0],'reno':[4,9,1,4,7]}
-carcatalog=pd.DataFrame(cardata)
-carcatalog.index.rename(name='index',inplace=True)
-carcatalog.rename(index={0:'ono'},inplace=True)
-volvo=[5,8,2,6,5]
-carcatalog['volvo']=volvo
-pezhu=[13,43,54,76,76]
-carcatalog.insert(loc=0 , column='pezhu',value=pezhu)
-carcatalog.to_excel("excelexmple.xlsx") #add the Data frame into the excel file
-carcatalog_Csvexcel = pd.read_excel("excelexmple.xlsx") #read from the excel file
-carcatalog_Csvexcel1 = pd.read_excel("excelexmple.xlsx", index_col = 0) #read from the excel file from first column
+# viz.head(9).hist()
+# plt.show()
 
-print(carcatalog_Csvexcel,carcatalog_Csvexcel1) 
+# plt.scatter(df.FUELCONSUMPTION_COMB , df.CO2EMISSIONS ,color='blue')
+# plt.xlabel("FUEL CONSUMPTION")
+# plt.ylabel("CO2 EMISSIONS")
+# plt.show()
+
+# plt.scatter(df.CYLINDERS , df.CO2EMISSIONS , color='green')
+# plt.xlabel("cylanders")
+# plt.ylabel("emission")
+# plt.show()
+
+# msk=np.random.rand(len(df) )< 0.8
+# train = df[msk]
+# test=df[~msk]
+# fig=plt.figure()
+# ax=fig.add_subplot(111)
+# ax = plt.scatter(train.ENGINESIZE ,train.CO2EMISSIONS , color='green')
+# ax = plt.scatter(test.ENGINESIZE ,test.CO2EMISSIONS , color='red')
+# plt.xlabel("engin size")
+# plt.ylabel("emission")
+# plt.show()
+
+msk=np.random.rand(len(df) )< 0.8
+train = df[msk]
+test=df[~msk]
+regression = linear_model.LinearRegression()
+train_x = np.asanyarray(train[["ENGINESIZE"]]) 
+train_y =np.asanyarray(train[["CO2EMISSIONS"]])
+regression.fit(train_x,train_y)
+print('coefficients : tetta 1' , regression.coef_)
+print('intercept : tetta 0' , regression.intercept_)
+
+plt.scatter(train.ENGINESIZE ,train.CO2EMISSIONS , color='green')
+plt.scatter(train_x ,regression.coef_[0][0]*train_x + regression.intercept_[0] ,color='red' )
+
+plt.xlabel("engin size")
+plt.ylabel("emission")
+plt.show()
+
+# test : 
+
+test_x = np.asanyarray(train[["ENGINESIZE"]]) 
+test_y =np.asanyarray(train[["CO2EMISSIONS"]])
+
+test_y_ = regression.predict(test_x)
+ # فرمول های بدست آوردن خطا
+print("mean absolut : ", np.mean(np.absolute(test_y_ - test_y)))
+print("mean absolut square : ", np.mean(np.absolute(test_y_ - test_y)** 2))
+print("r2 score : %.2f : ", r2_score(test_y , test_y_)** 2) # اگر از 0.75 به بالا باشه یعنی خوبه 
+
+print('r2_score:', r2_score(test_y, test_y_))
