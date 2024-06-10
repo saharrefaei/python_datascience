@@ -5,33 +5,58 @@ import numpy as np
 from sklearn import linear_model
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import PolynomialFeatures
-df = pd.read_csv(r"C:\Users\sahar\Downloads\FuelConsumptionCo2.csv")
+from scipy.optimize import curve_fit
 
-df.dropna()
+# خواندن داده‌ها از فایل CSV
+df = pd.read_csv(r"C:\Users\sahar\Downloads\china_gdp.csv")
 
-cdf = df[['ENGINESIZE','CYLINDERS','FUELCONSUMPTION_COMB','CO2EMISSIONS']]
+# رسم نمودار اولیه
+plt.figure(figsize=(8,5))
+x_data = df['Year'].values 
+y_data = df['Value'].values
+plt.plot(x_data , y_data , 'ro')
+# تعریف تابع سیگموید (لجستیک)
+def sigmoid(x, Beta_1, Beta_2):
+    y = 1 / (1 + np.exp(-Beta_1*(x-Beta_2)))
+    return y
 
-random = np.random.rand(len(cdf))<0.8
+# نرمال‌سازی داده‌ها
+xdata = x_data / max(x_data)
+ydata = y_data / max(y_data)
 
-train = cdf[random]
-test = cdf[~random]
+# برازش منحنی با استفاده از تابع لجستیک
+popt, pcov = curve_fit(sigmoid, xdata, ydata)
 
-train_x = np.asanyarray(train[['ENGINESIZE']])
-train_y = np.asanyarray(train[['CO2EMISSIONS']])
-test_x = np.asanyarray(test[['ENGINESIZE']])
-test_y = np.asanyarray(test[['CO2EMISSIONS']])
+# چاپ پارامترهای بهینه
+print(popt[0], popt[1])
 
-poly = PolynomialFeatures(degree=2)
+# رسم منحنی برازش داده شده
+x = np.linspace(1960, 2015, 55)
+x = x / max(x)
+plt.figure(figsize=(8,5))
+y = sigmoid(x, *popt)
+plt.plot(xdata, ydata, 'ro', label='data')
+plt.plot(x,y, linewidth=3.0, label='fit')
+plt.legend(loc='best')
+plt.ylabel('GDP')
+plt.xlabel('Year')
+plt.show()
 
-train_x_poly = poly.fit_transform(train_x)
 
-regression = linear_model.LinearRegression()
-regression.fit(train_x_poly , train_y)
+msk = np.random.rand(len(df)) < 0.8
+train_x = xdata[msk]
+test_x = xdata[~msk]
+train_y = ydata[msk]
+test_y = ydata[~msk]
 
-print("coef :" , regression.coef_)
-print("intercept : " , regression.intercept_)
+# build the model using train set
+popt, pcov = curve_fit(sigmoid, train_x, train_y)
 
-test_x_poly = poly.fit_transform(test_x)
-test_y_ = regression.predict(test_x_poly)
+# predict using test set
+y_hat = sigmoid(test_x, *popt)
 
-print("r2_score :" , r2_score(test_y, test_y_))
+# evaluation
+print("Mean absolute error: %.2f" % np.mean(np.absolute(y_hat - test_y)))
+print("Residual sum of squares (MSE): %.2f" % np.mean((y_hat - test_y) ** 2))
+from sklearn.metrics import r2_score
+print("R2-score: %.2f" % r2_score(y_hat , test_y) )
