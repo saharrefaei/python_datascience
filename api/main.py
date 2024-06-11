@@ -4,67 +4,40 @@ from sklearn import linear_model
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 
-# خواندن داده‌ها
-df = pd.read_csv(r"C:\Users\sahar\Downloads\1632300362534233.csv")
+df = pd.read_csv(r"C:\Users\sahar\Downloads\insurance_data.csv")
 
-# تبدیل ستون 'Price' به float
-df['Price'] = df['Price'].apply(lambda x: float(x))
+df["sex"] = df["sex"].replace({'female': 1, 'male': 0})
+df["smoker"] = df["smoker"].replace({'yes': 1, 'no': 0})
+df["region"] = df["region"].map({'northeast': 1, 'southwest': 0})
 
-# حذف ردیف‌هایی که مقدار ستون 'Area' آن‌ها '###' است
-df = df[df['Area'] != '###']
-
-# حذف کاما و تبدیل ستون 'Area' به float
-df['Area'] = df['Area'].str.replace(',', '').astype(float)
-
-# حذف مقادیر خالی از ستون 'Address'
-df['Address'].dropna()
-
-# تبدیل مقادیر True/False به 1/0
-df["Parking"] = df["Parking"].replace({True: 1, False: 0})
-df["Warehouse"] = df["Warehouse"].replace({True: 1, False: 0})
-df["Elevator"] = df["Elevator"].replace({True: 1, False: 0})
-
-# اعمال One-Hot Encoding بر روی ستون "Address"
-encoded_address = pd.get_dummies(df['Address'], prefix='Address')
-
-# اضافه کردن ستون‌های جدید به دیتافریم
-df = pd.concat([df, encoded_address], axis=1)
-
-# حذف ستون "Address" اصلی
-df.drop(columns=['Address'], inplace=True)
-
-# انتخاب ویژگی‌ها و قیمت به عنوان ورودی و خروجی مدل
-features = ["Area", "Room", "Parking", "Warehouse", "Elevator"] + list(encoded_address.columns)
-msk = df[features + ['Price']]
+df.replace(['', ' ', 'NA', 'N/A', 'n/a', 'na'], np.nan, inplace=True)
+df = df.dropna()
 
 
-# تقسیم داده‌ها به مجموعه آموزشی و آزمایشی
-random = np.random.rand(len(msk)) < 0.8
-train = msk[random]
-test = msk[~random]
+msk = df[['age',	'sex',	'bmi'	,'children',	'smoker',	'region','charges' ]]
+random = np.random.rand(len(df)) <0.8
+train = df[random]
+test = df[~random]
 
-# نرمال‌سازی ستون 'Area'
-x_data = df['Area'].values
-Area_normalized = x_data / max(x_data)
-df['Area'] = Area_normalized
 
-# آماده‌سازی داده‌های آموزشی و آزمایشی
-train_x = np.asanyarray(train[features])
-train_y = np.asanyarray(train[['Price']])
-test_x = np.asanyarray(test[features])
-test_y = np.asanyarray(test[['Price']])
 
-# ایجاد و آموزش مدل خطی
+train_x = np.asanyarray(train[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
+train_y = np.asanyarray(train[['charges']])
 regression = linear_model.LinearRegression()
 regression.fit(train_x, train_y)
-
-# نمایش ضرایب و عرض از مبدا مدل
 print('coef:', regression.coef_)
 print("intercept:", regression.intercept_)
-
-# پیش‌بینی بر روی داده‌های آزمایشی
+test_x = np.asanyarray(test[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
+test_y = np.asanyarray(test[['charges']])
 test_y_pred = regression.predict(test_x)
-
-# محاسبه r2_score
 r2 = r2_score(test_y, test_y_pred)
 print("r2score:", r2)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(test_y, test_y_pred, color='blue', label='Predicted vs Actual')
+plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], 'k--', lw=2, color='red', label='Ideal fit')
+plt.xlabel('Actual Charges')
+plt.ylabel('Predicted Charges')
+plt.title('Actual vs Predicted Charges')
+plt.legend()
+plt.show()
