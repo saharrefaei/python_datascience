@@ -1,43 +1,45 @@
 import pandas as pd
 import numpy as np
-from sklearn import linear_model
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.metrics import r2_score
-
-df = pd.read_csv(r"C:\Users\sahar\Downloads\insurance_data.csv")
-
-df["sex"] = df["sex"].replace({'female': 1, 'male': 0})
-df["smoker"] = df["smoker"].replace({'yes': 1, 'no': 0})
-df["region"] = df["region"].map({'northeast': 1, 'southwest': 0})
-
+from sklearn import preprocessing
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import metrics
+df = pd.read_csv(r"C:\Users\sahar\Downloads\teleCust1000t.csv")
 df.replace(['', ' ', 'NA', 'N/A', 'n/a', 'na'], np.nan, inplace=True)
 df = df.dropna()
 
+x = df[['region', 'tenure','age', 'marital', 'address', 'income', 'ed', 'employ','retire', 'gender', 'reside']].values
+y = df['custcat'].values
 
-msk = df[['age',	'sex',	'bmi'	,'children',	'smoker',	'region','charges' ]]
-random = np.random.rand(len(df)) <0.8
-train = df[random]
-test = df[~random]
+scater = preprocessing.StandardScaler().fit(x)
+x = scater.transform(x.astype(float))
 
 
+x_train , x_test , y_train , y_test = train_test_split(x,y,test_size=0.2,random_state=4)
 
-train_x = np.asanyarray(train[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
-train_y = np.asanyarray(train[['charges']])
-regression = linear_model.LinearRegression()
-regression.fit(train_x, train_y)
-print('coef:', regression.coef_)
-print("intercept:", regression.intercept_)
-test_x = np.asanyarray(test[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
-test_y = np.asanyarray(test[['charges']])
-test_y_pred = regression.predict(test_x)
-r2 = r2_score(test_y, test_y_pred)
-print("r2score:", r2)
+print(x_train.shape , y_train.shape)
+print(x_test.shape , y_test.shape)
 
-plt.figure(figsize=(10, 6))
-plt.scatter(test_y, test_y_pred, color='blue', label='Predicted vs Actual')
-plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], 'k--', lw=2, color='red', label='Ideal fit')
-plt.xlabel('Actual Charges')
-plt.ylabel('Predicted Charges')
-plt.title('Actual vs Predicted Charges')
-plt.legend()
-plt.show()
+K=4
+neigh = KNeighborsClassifier(n_neighbors = K ).fit(x_train , y_train)
+
+
+yhat = neigh.predict(x_test)
+
+print("Train set Accuracy: ", metrics.accuracy_score(y_train , neigh.predict(x_train)))
+print("test set Accuracy: ",metrics.accuracy_score(y_test , yhat))
+
+
+# or :
+  
+# ks = 10
+# mean_acc = np.zeros((ks-1))
+# std_acc = np.zeros((ks-1))
+
+# for n in range(1,ks) :
+#   neigh = KNeighborsClassifier(n_neighbors = n ).fit(x_train , y_train)
+#   yhat = neigh.predict(x_test)
+#   mean_acc[n-1] = metrics.accuracy_score(y_test , yhat)
+
+# print("test set Accuracy: ", mean_acc )
