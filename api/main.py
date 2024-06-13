@@ -3,43 +3,45 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn import metrics
-df = pd.read_csv(r"C:\Users\sahar\Downloads\teleCust1000t.csv")
+df = pd.read_csv(r"C:\Users\sahar\Downloads\drug200.csv")
 df.replace(['', ' ', 'NA', 'N/A', 'n/a', 'na'], np.nan, inplace=True)
 df = df.dropna()
 
-x = df[['region', 'tenure','age', 'marital', 'address', 'income', 'ed', 'employ','retire', 'gender', 'reside']].values
-y = df['custcat'].values
-
-scater = preprocessing.StandardScaler().fit(x)
-x = scater.transform(x.astype(float))
+X = df[['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K']].values
+y = df['Drug']
 
 
-x_train , x_test , y_train , y_test = train_test_split(x,y,test_size=0.2,random_state=4)
+
+le_sex = preprocessing.LabelEncoder()
+le_sex.fit(['F','M'])
+X[:,1] = le_sex.transform(X[:,1]) 
+
+
+le_sex.fit(['HIGH','NORMAL','LOW'])
+X[:,2] = le_sex.transform(X[:,2]) 
+
+
+le_sex.fit(['HIGH','NORMAL'])
+X[:,3] = le_sex.transform(X[:,3]) 
+
+
+
+
+print(X)
+
+x_train , x_test , y_train , y_test = train_test_split(X,y,test_size=0.2,random_state=4)
 
 print(x_train.shape , y_train.shape)
 print(x_test.shape , y_test.shape)
 
-K=4
-neigh = KNeighborsClassifier(n_neighbors = K ).fit(x_train , y_train)
+# K=4
+desiionTree = DecisionTreeClassifier(criterion="entropy", max_depth = 4).fit(x_train , y_train)
 
 
-yhat = neigh.predict(x_test)
+yhat = desiionTree.predict(x_test)
 
-print("Train set Accuracy: ", metrics.accuracy_score(y_train , neigh.predict(x_train)))
 print("test set Accuracy: ",metrics.accuracy_score(y_test , yhat))
 
 
-# or :
-  
-# ks = 10
-# mean_acc = np.zeros((ks-1))
-# std_acc = np.zeros((ks-1))
-
-# for n in range(1,ks) :
-#   neigh = KNeighborsClassifier(n_neighbors = n ).fit(x_train , y_train)
-#   yhat = neigh.predict(x_test)
-#   mean_acc[n-1] = metrics.accuracy_score(y_test , yhat)
-
-# print("test set Accuracy: ", mean_acc )
