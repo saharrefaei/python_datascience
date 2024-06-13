@@ -1,43 +1,47 @@
 import pandas as pd
 import numpy as np
-from sklearn import linear_model
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.metrics import r2_score
-
-df = pd.read_csv(r"C:\Users\sahar\Downloads\insurance_data.csv")
-
-df["sex"] = df["sex"].replace({'female': 1, 'male': 0})
-df["smoker"] = df["smoker"].replace({'yes': 1, 'no': 0})
-df["region"] = df["region"].map({'northeast': 1, 'southwest': 0})
-
+from sklearn import preprocessing
+from sklearn.tree import DecisionTreeClassifier
+from sklearn import metrics
+df = pd.read_csv(r"C:\Users\sahar\Downloads\drug200.csv")
 df.replace(['', ' ', 'NA', 'N/A', 'n/a', 'na'], np.nan, inplace=True)
 df = df.dropna()
 
-
-msk = df[['age',	'sex',	'bmi'	,'children',	'smoker',	'region','charges' ]]
-random = np.random.rand(len(df)) <0.8
-train = df[random]
-test = df[~random]
+X = df[['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K']].values
+y = df['Drug']
 
 
 
-train_x = np.asanyarray(train[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
-train_y = np.asanyarray(train[['charges']])
-regression = linear_model.LinearRegression()
-regression.fit(train_x, train_y)
-print('coef:', regression.coef_)
-print("intercept:", regression.intercept_)
-test_x = np.asanyarray(test[['age',	'sex',	'bmi'	,'children',	'smoker',	'region']])
-test_y = np.asanyarray(test[['charges']])
-test_y_pred = regression.predict(test_x)
-r2 = r2_score(test_y, test_y_pred)
-print("r2score:", r2)
+le_sex = preprocessing.LabelEncoder()
+le_sex.fit(['F','M'])
+X[:,1] = le_sex.transform(X[:,1]) 
 
-plt.figure(figsize=(10, 6))
-plt.scatter(test_y, test_y_pred, color='blue', label='Predicted vs Actual')
-plt.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], 'k--', lw=2, color='red', label='Ideal fit')
-plt.xlabel('Actual Charges')
-plt.ylabel('Predicted Charges')
-plt.title('Actual vs Predicted Charges')
-plt.legend()
-plt.show()
+
+le_sex.fit(['HIGH','NORMAL','LOW'])
+X[:,2] = le_sex.transform(X[:,2]) 
+
+
+le_sex.fit(['HIGH','NORMAL'])
+X[:,3] = le_sex.transform(X[:,3]) 
+
+
+
+
+print(X)
+
+x_train , x_test , y_train , y_test = train_test_split(X,y,test_size=0.2,random_state=4)
+
+print(x_train.shape , y_train.shape)
+print(x_test.shape , y_test.shape)
+
+# K=4
+desiionTree = DecisionTreeClassifier(criterion="entropy", max_depth = 4).fit(x_train , y_train)
+
+
+yhat = desiionTree.predict(x_test)
+
+print("test set Accuracy: ",metrics.accuracy_score(y_test , yhat))
+
+
