@@ -1,63 +1,48 @@
 import numpy as np 
 import pandas as pd
-from scipy import ndimage 
-from scipy.cluster import hierarchy 
-from scipy.spatial import distance_matrix 
-from matplotlib import pylab, pyplot as plt 
-from sklearn import manifold, datasets 
-from sklearn.calibration import LabelEncoder
-from sklearn.cluster import AgglomerativeClustering 
-from sklearn.datasets import make_blobs 
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler, StandardScaler
 from sklearn.cluster import DBSCAN
-import sklearn.utils
-from sklearn.preprocessing import StandardScaler
-import numpy as np 
-import matplotlib.pyplot as plt 
-from sklearn.cluster import KMeans 
-from sklearn.datasets import make_blobs 
-from sklearn import preprocessing
-from sklearn.preprocessing import MinMaxScaler
+import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import euclidean_distances
 
+# خواندن دیتافریم از فایل CSV
 df = pd.read_csv(r"C:\Users\sahar\Downloads\1632560262896716.csv")
 print(df.info())
 
-
+# تبدیل مقادیر "Gender" به 0 و 1
 le_sex = LabelEncoder()
 df['Gender'] = le_sex.fit_transform(df['Gender'])
 
-
-print ("Shape of dataset before cleaning: ", df.size)
-df[['Gender','Age',	'Annual Income (k$)','Spending Score (1-100)']] = df[['Gender','Age','Annual Income (k$)','Spending Score (1-100)']].apply(pd.to_numeric, errors='coerce')
+# تمیز کردن داده‌ها
+print("Shape of dataset before cleaning: ", df.size)
+df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']] = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].apply(pd.to_numeric, errors='coerce')
 df = df.dropna()
 df = df.reset_index(drop=True)
-print ("Shape of dataset after cleaning: ", df.size)
+print("Shape of dataset after cleaning: ", df.size)
 df.head(5)
 
-X = df[['Gender','Age',	'Annual Income (k$)','Spending Score (1-100)']].values
-print(df)
+# استخراج ویژگی‌ها برای خوشه‌بندی
+X = df[['Gender', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)']].values
 
-min_max_scaler = MinMaxScaler()
-feature_mtx = min_max_scaler.fit_transform(X)
+# نرمال‌سازی داده‌ها
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
 
+# اجرای الگوریتم DBSCAN
+db = DBSCAN(eps=0.5, min_samples=5).fit(X)
 
+# اضافه کردن برچسب‌های خوشه‌بندی به دیتافریم
+df['clustering'] = db.labels_
 
-distnce=euclidean_distances(feature_mtx,feature_mtx) 
-agglom = AgglomerativeClustering(n_clusters = 6, linkage = 'complete')
-agglom.fit(distnce)
-
-df['clustering']=agglom.labels_
-
-
+# رسم پلات خوشه‌بندی
 plt.figure(figsize=(10, 6))
 
+# استفاده از دو ویژگی 'Annual Income' و 'Spending Score' برای رسم پلات
 plt.scatter(df['Annual Income (k$)'], df['Spending Score (1-100)'], c=df['clustering'], cmap='viridis', marker='o')
 
+# اضافه کردن برچسب‌ها و عنوان
 plt.xlabel('Annual Income (k$)')
 plt.ylabel('Spending Score (1-100)')
-plt.title('Customer Clustering using AgglomerativeClustering')
+plt.title('Customer Clustering using DBSCAN')
 plt.colorbar()
 plt.show()
-
