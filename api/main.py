@@ -18,40 +18,46 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans 
 from sklearn.datasets import make_blobs 
 from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics.pairwise import euclidean_distances
 
 df = pd.read_csv(r"C:\Users\sahar\Downloads\1632560262896716.csv")
 print(df.info())
-
-print(df['Gender'].values)
 
 
 le_sex = LabelEncoder()
 df['Gender'] = le_sex.fit_transform(df['Gender'])
 
+
+print ("Shape of dataset before cleaning: ", df.size)
+df[['Gender','Age',	'Annual Income (k$)','Spending Score (1-100)']] = df[['Gender','Age','Annual Income (k$)','Spending Score (1-100)']].apply(pd.to_numeric, errors='coerce')
+df = df.dropna()
+df = df.reset_index(drop=True)
+print ("Shape of dataset after cleaning: ", df.size)
+df.head(5)
+
 X = df[['Gender','Age',	'Annual Income (k$)','Spending Score (1-100)']].values
+print(df)
+
+min_max_scaler = MinMaxScaler()
+feature_mtx = min_max_scaler.fit_transform(X)
 
 
 
-Normalize = StandardScaler()
+distnce=euclidean_distances(feature_mtx,feature_mtx) 
+agglom = AgglomerativeClustering(n_clusters = 6, linkage = 'complete')
+agglom.fit(distnce)
 
-X=Normalize.fit_transform(X)
+df['clustering']=agglom.labels_
 
 
-clusterNumber = 3
-
-k_means = KMeans(init = "k-means++", n_clusters = clusterNumber, n_init = 12)
-k_means.fit(X)
-df['clustering_label'] = k_means.labels_
-
-# رسم پلات خوشه‌بندی
 plt.figure(figsize=(10, 6))
 
-# استفاده از دو ویژگی 'Annual Income' و 'Spending Score' برای رسم پلات
-plt.scatter(df['Annual Income (k$)'], df['Spending Score (1-100)'], c=df['clustering_label'], cmap='viridis', marker='o')
+plt.scatter(df['Annual Income (k$)'], df['Spending Score (1-100)'], c=df['clustering'], cmap='viridis', marker='o')
 
-# اضافه کردن برچسب‌ها و عنوان
 plt.xlabel('Annual Income (k$)')
 plt.ylabel('Spending Score (1-100)')
-plt.title('Customer Clustering using KMeans')
+plt.title('Customer Clustering using AgglomerativeClustering')
 plt.colorbar()
 plt.show()
+
